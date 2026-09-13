@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+output/
+*.log
+scripts/requests/*_report.*
+baidu_report.md
+baidu_subdomains.txt
