@@ -36,7 +36,7 @@ baidu-domain-collector/
 
 ## 分享幻灯片
 
-直接用浏览器打开 [presentation/index.html](presentation/index.html)。幻灯片覆盖 Bing 原脚本、百度 302 验证现象、browser-harness 分层实现、关键代码、域名校验和实验结果；支持按钮、方向键、空格、Home 与 End 翻页。
+直接用浏览器打开 [presentation/index.html](presentation/index.html)。幻灯片覆盖 Bing 原脚本、百度 302 验证现象、browser-harness 分层实现、关键代码、域名校验和实验结果；支持按钮、方向键、空格、Home 与 End 翻页。配套的课堂讲稿见 [presentation/speaker-notes.md](presentation/speaker-notes.md)。
 
 ## 依赖
 
