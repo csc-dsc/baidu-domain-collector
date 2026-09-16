@@ -24,6 +24,8 @@ baidu-domain-collector/
 ├── docs/
 │   ├── browser-harness.md               # 自写脚本的分层实现思路
 │   └── first-test.md                    # 初次 requests/Edge 测试的脱敏记录
+├── presentation/
+│   └── index.html                       # 可离线打开的实验分享幻灯片
 ├── tests/
 │   └── test_requests_collector.py       # 无网络的 requests 版单元测试
 ├── requirements.txt
@@ -31,6 +33,10 @@ baidu-domain-collector/
 ```
 
 运行过程写入 `output/`，该目录已被 Git 忽略，避免提交浏览器会话产生的临时结果和跳转参数。
+
+## 分享幻灯片
+
+直接用浏览器打开 [presentation/index.html](presentation/index.html)。幻灯片覆盖 Bing 原脚本、百度 302 验证现象、browser-harness 分层实现、关键代码、域名校验和实验结果；支持按钮、方向键、空格、Home 与 End 翻页。
 
 ## 依赖
 
@@ -107,4 +113,3 @@ Edge 已打开且当前活动页为 `about:blank`、`edge://newtab/` 或默认 E
 ## 观察与限制
 
 完整说明见 [docs/browser-harness.md](docs/browser-harness.md)，初次测试记录见 [docs/first-test.md](docs/first-test.md)。搜索结果只反映搜索索引，不能证明域名完整、存活或归属状态。
-
