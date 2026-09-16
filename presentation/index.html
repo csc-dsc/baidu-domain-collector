@@ -549,9 +549,11 @@ json_path, text_path = write_results(result)</pre>
           <h3 style="margin-top:14px">为什么用标准输入？</h3>
           <p><code>browser-harness</code> 接受一段命令文本。外层脚本读取内层采集器源码后，以 stdin 传入，避免 PowerShell 复杂引号转义。</p>
           <h3 style="margin-top:14px">为什么不使用 shell？</h3>
-          <p>传入参数列表 <code>[HARNESS]</code>，不使用 <code>shell=True</code>，避免命令字符串的二次解释。</p>
+          <p>shell 是 cmd、PowerShell 等命令解释器。传入参数列表 <code>[HARNESS]</code> 时，Python 直接启动 exe；不使用 <code>shell=True</code>，就不会让命令字符串再被 shell 按引号、管道和特殊字符解释一次。</p>
           <h3 style="margin-top:14px">产物如何组织？</h3>
           <p>每次运行向 <code>output/</code> 新建时间戳 JSON 与 TXT；源码、旧证据和 Git 历史都不会被覆盖。</p>
+          <h3 style="margin-top:14px">返回值如何处理？</h3>
+          <p><code>returncode == 0</code> 表示工具正常结束；非 0 时抛出包含 stderr/stdout 的 RuntimeError。正常 stdout 应是一段 JSON，<code>json.loads()</code> 将它转为 Python 字典。</p>
         </div>
       </div>
     </section>

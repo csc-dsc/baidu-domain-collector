@@ -56,11 +56,15 @@ browser-harness 是一个独立工具。Python 把一段命令交给它，它附
 
 外层 runner 的工作其实很单一：读取采集命令、启动 browser-harness、读取标准输出、保存结果。
 
-subprocess.run([HARNESS], ...) 使用的是参数列表而不是拼成一段 shell 字符串。这样 shell 不会再解释引号、空格或其他特殊字符。
+subprocess.run([HARNESS], ...) 使用的是参数列表而不是拼成一段 shell 字符串。这里的 shell 指 cmd、PowerShell 或 Linux shell 这类命令解释器。若写 shell=True，Python 会先把字符串交给 shell，shell 再按引号、空格、管道符和重定向符解析一次。这里直接传 [HARNESS]，Python 直接启动这个 exe，不经过第二层命令解析，行为更稳定。
 
-input=command 表示把内层采集代码从标准输入发送给 browser-harness。text=True 和 encoding="utf-8" 是为了保证中文页面标题、日志和 JSON 不会乱码。
+HARNESS 的值来自 os.environ.get("BROWSER_HARNESS", "browser-harness")。也就是说，PowerShell 中设置的 BROWSER_HARNESS 会传给 Python；没有设置时，Python 尝试从 PATH 查找名为 browser-harness 的命令。
 
-capture_output=True 很关键：正常情况下 stdout 是 JSON；出错时 stderr 保留 browser-harness 原始错误。timeout=60 则避免工具因为浏览器附着或页面响应异常而无限等待。
+input=command 表示把内层采集代码从标准输入发送给 browser-harness。注意，command 是 collect_current_page.py 的完整文本，不是它的路径。text=True 和 encoding="utf-8" 是为了保证中文页面标题、日志和 JSON 不会乱码。
+
+process.returncode 是子进程退出状态。约定上 0 表示正常结束，非 0 表示工具发生错误。if process.returncode != 0 这个判断会在工具失败时立刻执行 raise RuntimeError(...)，把 stderr 和 stdout 合并到异常文本中，让外层主程序打印原始错误并以失败状态退出。
+
+capture_output=True 很关键：正常情况下 stdout 应该是 collect_current_page.py 最后 print 出来的 JSON；出错时 stderr 保留 browser-harness 原始错误。return json.loads(process.stdout) 则把 JSON 字符串转成 Python 字典，例如 result["status"]、result["domains"]。如果 stdout 不是合法 JSON，json.loads 会抛出 ValueError，说明不是正常采集结果。timeout=60 则避免工具因为浏览器附着或页面响应异常而无限等待。
 
 保存结果时，JSON 用于证据和追溯，TXT 用于后续简单处理。文件名带时间戳，且使用新建模式，不会覆盖此前实验结果。
 

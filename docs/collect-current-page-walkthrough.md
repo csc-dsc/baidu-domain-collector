@@ -60,6 +60,12 @@ JavaScript 最后返回 JSON.stringify(report)。browser-harness 把这个字符
 
 这里的 command 是 collect_current_page.py 的完整文本，而不是文件路径。input=command 让 subprocess 把这段文本写入 browser-harness 的标准输入。
 
+process.returncode 是 browser-harness 结束时返回的状态码。0 表示本次命令正常结束；非 0 表示工具报告失败，因此代码执行 raise RuntimeError(process.stderr + process.stdout)。stderr 通常保存工具的错误信息，stdout 也被附加进去，避免丢失工具已经输出的上下文。
+
+正常时，collect_current_page.py 的最外层 print(js(...)) 将 JSON 字符串写到 stdout。json.loads(process.stdout) 将这个字符串转成 Python 字典；随后 runner 可以读取 result["status"]、result["records"] 和 result["domains"]。如果 stdout 不是 JSON，json.loads 会抛出 ValueError，程序不会把未知文本当作域名结果。
+
+为什么传入 [HARNESS] 而不是 shell=True？shell 是 cmd、PowerShell 或其他命令解释器。shell=True 会让 Python 先把命令字符串交给 shell，再由 shell 解释引号、空格、管道、重定向等字符。这里 [HARNESS] 是参数列表，Python 直接启动指定的 browser-harness 可执行文件；采集命令经 input 走标准输入，不参加 shell 命令解析。
+
 当前空白页自动搜索入口只是在这个 command 前面加了一段导航前缀：
 
     collector = (SCRIPT_DIR / "collect_current_page.py").read_text(
