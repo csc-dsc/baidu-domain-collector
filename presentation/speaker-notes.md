@@ -72,7 +72,7 @@ capture_output=True 很关键：正常情况下 stdout 应该是 collect_current
 
 这一页需要特别说明，collect_current_page.py 不是普通 Python 模块。它最外层是 print(js(r'''...'''))：runner 把整个文件作为标准输入交给 browser-harness；browser-harness 提供 js() 函数；js() 内的立即执行 JavaScript 函数运行在当前 Edge 页中；JSON.stringify(report) 返回给 js()；最外层 print 最终把 JSON 写到 stdout。
 
-所以不要直接执行 python collect_current_page.py，因为系统 Python 没有 js() 函数。它只能通过 run_current_page.py 或 initial_run_current_page.ps1 作为 browser-harness 的命令文本执行。完整逐段说明已经单独整理在 docs/collect-current-page-walkthrough.md。
+所以不要直接执行 python collect_current_page.py，因为系统 Python 没有 js() 函数。它只能通过 run_current_page.py 或 initial_run_current_page.ps1 作为 browser-harness 的命令文本执行。
 
 这里还可以指向 PPT 上的实际调用代码：HARNESS = os.environ.get("BROWSER_HARNESS", "browser-harness") 先读取 PowerShell 中的路径；run_harness(command) 用 subprocess.run([HARNESS], input=command, ...) 启动工具；command 是 collect_current_page.py 的文件内容；工具的 stdout 最后由 json.loads 转成 Python 字典。空白页入口则把 NAVIGATION_PREFIX 和缩进后的采集器拼成同一个 command，再调用同一个 run_harness 函数。
 
