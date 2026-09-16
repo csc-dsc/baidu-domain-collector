@@ -554,7 +554,43 @@ json_path, text_path = write_results(result)</pre>
 
     <section class="slide" data-slide>
       <header>
-        <div class="eyebrow">07 / 内层采集器</div>
+        <div class="eyebrow">07 / 调用接口</div>
+        <h2>collect_current_page.py：它如何真正进入 Edge 页面？</h2>
+      </header>
+      <div class="grid-2">
+        <pre class="code"><span class="comment"># 这整份文件经 stdin 交给 browser-harness</span>
+print(js(r'''(function () {
+    <span class="comment">// 这里开始已经是网页中的 JavaScript</span>
+    var page = new URL(location.href);
+    var report = {
+        page_url: page.href,
+        page_title: document.title,
+        status: <span class="str">""</span>,
+        records: [],
+        domains: []
+    };
+
+    <span class="comment">// ... 检查页面、解析卡片、校验域名 ...</span>
+    return JSON.stringify(report);
+})()'''))</pre>
+        <div class="panel">
+          <h3>四个运行层次</h3>
+          <ol style="padding-left:20px;margin:0">
+            <li><strong>runner：</strong>读取该文件文本并传给 subprocess。</li>
+            <li><strong>browser-harness：</strong>解释 stdin 中的 Python 命令，提供 js() 和 wait()。</li>
+            <li><strong>js()：</strong>把括号内的 JavaScript 注入当前 Edge 页执行。</li>
+            <li><strong>print()：</strong>把 js() 返回的 JSON 字符串写到 stdout，runner 再用 json.loads() 解析。</li>
+          </ol>
+          <div class="callout" style="margin-top:18px">
+            <p><strong>关键点：</strong>这里的 js() 不是 Python 标准库函数；直接用 Python 运行 collect_current_page.py 会报错。它必须作为 browser-harness 的标准输入命令执行。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-slide>
+      <header>
+        <div class="eyebrow">08 / 内层采集器</div>
         <h2>DOM 里如何定位“真实目标地址”？</h2>
       </header>
       <div class="grid-2">
@@ -591,7 +627,7 @@ var candidates = [[<span class="str">"href"</span>, anchor.href]];
 
     <section class="slide" data-slide>
       <header>
-        <div class="eyebrow">08 / 数据质量</div>
+        <div class="eyebrow">09 / 数据质量</div>
         <h2>URL 与域名校验：避免“看起来像”的误收集</h2>
       </header>
       <div class="grid-2">
@@ -625,7 +661,7 @@ var candidates = [[<span class="str">"href"</span>, anchor.href]];
 
     <section class="slide" data-slide>
       <header>
-        <div class="eyebrow">09 / 可运行入口</div>
+        <div class="eyebrow">10 / 可运行入口</div>
         <h2>从“当前结果页”到“当前空白页自动搜索”</h2>
       </header>
       <div class="timeline">
@@ -661,7 +697,7 @@ python scripts\browser_harness\run_search_from_blank_tab.py</pre>
 
     <section class="slide" data-slide>
       <header>
-        <div class="eyebrow">10 / 观察结果</div>
+        <div class="eyebrow">11 / 观察结果</div>
         <h2>一次浏览器页面采集：10 条结果，9 个去重域名</h2>
       </header>
       <div class="grid-2">
@@ -687,7 +723,7 @@ python scripts\browser_harness\run_search_from_blank_tab.py</pre>
 
     <section class="slide" data-slide>
       <header>
-        <div class="eyebrow">11 / 方法对比</div>
+        <div class="eyebrow">12 / 方法对比</div>
         <h2>从失败中得到的工程判断</h2>
       </header>
       <table>
@@ -708,7 +744,7 @@ python scripts\browser_harness\run_search_from_blank_tab.py</pre>
     </section>
 
     <section class="slide end" data-slide>
-      <div class="eyebrow">12 / 总结</div>
+      <div class="eyebrow">13 / 总结</div>
       <h1>把一次“查不到”<br>变成可解释、可复现的实验</h1>
       <div class="grid-3">
         <div class="panel teal"><h3>数据链</h3><p>完整 URL → 主机名规范化 → 域边界校验 → 去重排序。</p></div>
@@ -724,7 +760,7 @@ python scripts\browser_harness\run_search_from_blank_tab.py</pre>
 
   <nav class="nav" aria-label="幻灯片导航">
     <button type="button" id="prev">上一页</button>
-    <span class="counter" id="counter">1 / 13</span>
+    <span class="counter" id="counter">1 / 14</span>
     <div class="dots" id="dots" aria-label="页码"></div>
     <button type="button" id="next">下一页</button>
   </nav>

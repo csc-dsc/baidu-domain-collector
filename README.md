@@ -112,4 +112,4 @@ Edge 已打开且当前活动页为 `about:blank`、`edge://newtab/` 或默认 E
 
 ## 观察与限制
 
-完整说明见 [docs/browser-harness.md](docs/browser-harness.md)，初次测试记录见 [docs/first-test.md](docs/first-test.md)。搜索结果只反映搜索索引，不能证明域名完整、存活或归属状态。
+完整说明见 [docs/browser-harness.md](docs/browser-harness.md)，初次测试记录见 [docs/first-test.md](docs/first-test.md)，采集器调用与逐段代码解释见 [docs/collect-current-page-walkthrough.md](docs/collect-current-page-walkthrough.md)。搜索结果只反映搜索索引，不能证明域名完整、存活或归属状态。

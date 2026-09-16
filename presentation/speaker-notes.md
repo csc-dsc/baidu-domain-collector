@@ -64,7 +64,13 @@ capture_output=True 很关键：正常情况下 stdout 是 JSON；出错时 stde
 
 保存结果时，JSON 用于证据和追溯，TXT 用于后续简单处理。文件名带时间戳，且使用新建模式，不会覆盖此前实验结果。
 
-## 07：内层 DOM 采集器如何工作
+## 07：collect_current_page.py 到底如何调用 browser 工具
+
+这一页需要特别说明，collect_current_page.py 不是普通 Python 模块。它最外层是 print(js(r'''...'''))：runner 把整个文件作为标准输入交给 browser-harness；browser-harness 提供 js() 函数；js() 内的立即执行 JavaScript 函数运行在当前 Edge 页中；JSON.stringify(report) 返回给 js()；最外层 print 最终把 JSON 写到 stdout。
+
+所以不要直接执行 python collect_current_page.py，因为系统 Python 没有 js() 函数。它只能通过 run_current_page.py 或 initial_run_current_page.ps1 作为 browser-harness 的命令文本执行。完整逐段说明已经单独整理在 docs/collect-current-page-walkthrough.md。
+
+## 08：内层 DOM 采集器如何工作
 
 内层代码运行在网页上下文，所以可以使用 document.querySelectorAll、location.href 等浏览器 API。
 
@@ -74,7 +80,7 @@ capture_output=True 很关键：正常情况下 stdout 是 JSON；出错时 stde
 
 代码把 href、mu、data-landurl、data-log.mu 都放进候选数组，按顺序验证。这样既兼容直接外链，也兼容不同结果模板。只要遇到第一个通过验证的候选 URL，就保存对应的来源字段，便于之后排查页面结构变化。
 
-## 08：域名校验为什么不能只用 contains
+## 09：域名校验为什么不能只用 contains
 
 如果只判断字符串里有没有 qq.com，就会把 evilqq.com 和 qq.com.example.org 误收集进来。
 
@@ -82,7 +88,7 @@ capture_output=True 很关键：正常情况下 stdout 是 JSON；出错时 stde
 
 代码还检查协议是不是 HTTP 或 HTTPS，拒绝 URL 中的用户名密码部分，处理末尾的点，统一小写，并检查 DNS 标签。比如标签不能以连字符开头，长度不能超过 63。这样的检查不是为了做复杂安全功能，而是为了避免搜索页面中异常或格式损坏的字符串污染结果。
 
-## 09：两个运行入口的取舍
+## 10：两个运行入口的取舍
 
 第一个入口只读取当前页面，适合演示和复核。讲解时可以先人工打开百度搜索页，再运行脚本，便于大家看到脚本到底读取了什么。
 
@@ -90,7 +96,7 @@ capture_output=True 很关键：正常情况下 stdout 是 JSON；出错时 stde
 
 为什么要加这层限制？因为自动化脚本最不应该随意替换用户正在看的网页。如果当前页不是空白页，脚本返回 active_tab_not_blank，相当于把“未执行”也变成一个可解释状态。
 
-## 10：如何读结果
+## 11：如何读结果
 
 浏览器路径的一次观察中，页面上有 10 条结果卡片，但最终得到 9 个域名。差异不是错误：同一个域名可能对应不同登录入口或不同 URL 路径，集合去重后只保留一次。
 
@@ -98,7 +104,7 @@ capture_output=True 很关键：正常情况下 stdout 是 JSON；出错时 stde
 
 这些结果仍然只代表当时百度搜索页展示的内容。它们不是完整子域枚举，也没有证明域名存活或归属。
 
-## 11：方法对比的结论
+## 12：方法对比的结论
 
 requests 版本的价值不因为遇到验证就变成零。它清楚展示了最小解析逻辑、百度参数、停止条件和日志记录方式。
 
@@ -106,7 +112,7 @@ browser-harness 版本的价值在于复用了一个正常浏览器页面环境�
 
 所以这两条路线不是互相替代，而是回答两个不同问题：requests 路线用于理解协议与异常处理；浏览器路线用于读取已正常加载的页面 DOM。
 
-## 12：结束总结
+## 13：结束总结
 
 这次实验最重要的收获不是“最后拿到了 9 个域名”，而是把每个环节都做成了可解释的状态。
 
