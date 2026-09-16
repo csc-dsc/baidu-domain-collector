@@ -78,13 +78,23 @@ capture_output=True 很关键：正常情况下 stdout 应该是 collect_current
 
 ## 08：内层 DOM 采集器如何工作
 
-内层代码运行在网页上下文，所以可以使用 document.querySelectorAll、location.href 等浏览器 API。
+这里说的是 JavaScript，不是 Java。JavaScript 是浏览器页面里执行的脚本语言；DOM 是 Document Object Model，也就是文档对象模型。浏览器收到 HTML 后，会把 h3、a、div 等标签和它们的属性、文本组织成一棵节点树。页面 JavaScript 可以通过 document 访问这棵树。
+
+在空白页自动模式中，runner 先让 Edge 导航到百度，再调用 wait(3) 等待页面初始加载。Edge 下载 HTML、解析 HTML、加载页面脚本和结果内容后，browser-harness 的 js() 才在当前页面上下文运行采集器中的 JavaScript。当前结果页模式不导航，前提是该百度结果页已经由用户正常加载完成。
+
+采集器不会用 JavaScript 再次 fetch 百度，也不访问 qq.com。它只读取 Edge 当前已经展示的 DOM。第一步是：
+
+document.querySelectorAll("#content_left h3 a[href]")
+
+这个 CSS 选择器的含义是：在 id 为 content_left 的结果区域中，找到所有 h3 标题下面、带 href 属性的 a 链接。querySelectorAll 返回的是 NodeList；Array.from 把它转为普通数组，后续才可以稳定使用 forEach、map 等数组方法。
 
 先判断当前页是否是百度搜索页，并检查关键词是否正好是 site:qq.com。这一层判断的作用是防止用户切换到别的标签页后，脚本把无关页面当成搜索结果。
 
-对于每个标题链接，anchor.closest(".result, .result-op, .c-container") 的意思是向上寻找最近的结果卡片容器。因为 mu 不一定挂在标题 a 标签上，通常挂在它的父级结果卡片里。
+循环中每一个 anchor 是一个标题链接节点。anchor.href 是浏览器解析后的完整 URL；但百度标题常是 baidu.com/link 中转地址。anchor.closest(".result, .result-op, .c-container") 的意思是从标题链接向上沿父节点查找，直到找到最近的搜索结果卡片。因为 mu 不一定挂在标题 a 标签上，通常挂在这个父级卡片里。
 
-代码把 href、mu、data-landurl、data-log.mu 都放进候选数组，按顺序验证。这样既兼容直接外链，也兼容不同结果模板。只要遇到第一个通过验证的候选 URL，就保存对应的来源字段，便于之后排查页面结构变化。
+随后 node.getAttribute("mu") 读取卡片 HTML 中的原始 mu 属性；data-landurl 和 data-log 也是同样的思路。代码把 href、mu、data-landurl、data-log.mu 都放进候选数组，按顺序调用 validate()。这样既兼容直接外链，也兼容不同结果模板。只要遇到第一个通过验证的候选 URL，就保存对应的来源字段，便于之后排查页面结构变化。
+
+所有记录处理完后，JavaScript 使用 JSON.stringify(report) 把 DOM 中提取出的普通数据转为字符串。这个字符串从 js() 返回给最外层 print，再经 browser-harness 的 stdout 回到 Python runner。Python 的 json.loads() 最后将它转回 result 字典。
 
 ## 09：域名校验为什么不能只用 contains
 

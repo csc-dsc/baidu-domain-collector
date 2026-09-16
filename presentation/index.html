@@ -601,6 +601,12 @@ print(js(r'''(function () {
       </header>
       <div class="grid-2">
         <pre class="code"><span class="comment">// collect_current_page.py 内的页面 JavaScript</span>
+<span class="comment">// Edge 已解析 HTML 为 DOM 节点树后，才查询页面</span>
+var anchors = Array.from(
+    document.querySelectorAll(<span class="str">"#content_left h3 a[href]"</span>)
+);
+
+anchors.forEach(<span class="kw">function</span> (anchor) {
 var card = anchor.closest(
     <span class="str">".result, .result-op, .c-container"</span>
 );
@@ -617,8 +623,11 @@ var candidates = [[<span class="str">"href"</span>, anchor.href]];
 <span class="kw">for</span> (var i = 0; i &lt; candidates.length; i++) {
     var result = validate(candidates[i][1]);
     <span class="kw">if</span> (result) { record.hostname = result.hostname; <span class="kw">break</span>; }
-}</pre>
+}
+});</pre>
         <div class="panel teal">
+          <h3>DOM 是什么？</h3>
+          <p>浏览器收到 HTML 后，会把标签、属性和文本组织成一棵文档对象模型树。JavaScript 通过 document 查询这棵树，而不是重新请求网页。</p>
           <h3>来源优先级</h3>
           <ol style="padding-left:20px;margin:0">
             <li><code>href</code>：若本身已是目标 URL，直接使用。</li>
