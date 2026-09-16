@@ -34,6 +34,42 @@ JavaScript 最后返回 JSON.stringify(report)。browser-harness 把这个字符
       -> stdout 输出 JSON
       -> json.loads(process.stdout)
 
+## 1.1 外层 runner 的实际关键代码
+
+下面是 run_current_page.py 中调用工具的核心，HARNESS 就是 PowerShell 中 BROWSER_HARNESS 指定的 exe 路径；没有环境变量时，程序从 PATH 查找 browser-harness：
+
+    HARNESS = os.environ.get("BROWSER_HARNESS", "browser-harness")
+
+    def run_harness(command):
+        process = subprocess.run(
+            [HARNESS],
+            input=command,
+            text=True,
+            encoding="utf-8",
+            capture_output=True,
+            timeout=60,
+        )
+        if process.returncode != 0:
+            raise RuntimeError(process.stderr + process.stdout)
+        return json.loads(process.stdout)
+
+    command = (SCRIPT_DIR / "collect_current_page.py").read_text(
+        encoding="utf-8"
+    )
+    result = run_harness(command)
+
+这里的 command 是 collect_current_page.py 的完整文本，而不是文件路径。input=command 让 subprocess 把这段文本写入 browser-harness 的标准输入。
+
+当前空白页自动搜索入口只是在这个 command 前面加了一段导航前缀：
+
+    collector = (SCRIPT_DIR / "collect_current_page.py").read_text(
+        encoding="utf-8"
+    )
+    command = NAVIGATION_PREFIX + textwrap.indent(collector, "    ")
+    result = run_harness(command)
+
+NAVIGATION_PREFIX 先调用 js() 判断当前页是否为空白或新标签页。只有判断成功时，缩进后的 collect_current_page.py 才会在 else 分支执行。
+
 ## 2. 先建立 report，而不是直接打印域名
 
 JavaScript 一开始创建 report：

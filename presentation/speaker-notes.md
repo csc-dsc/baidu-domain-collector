@@ -70,6 +70,8 @@ capture_output=True 很关键：正常情况下 stdout 是 JSON；出错时 stde
 
 所以不要直接执行 python collect_current_page.py，因为系统 Python 没有 js() 函数。它只能通过 run_current_page.py 或 initial_run_current_page.ps1 作为 browser-harness 的命令文本执行。完整逐段说明已经单独整理在 docs/collect-current-page-walkthrough.md。
 
+这里还可以指向 PPT 上的实际调用代码：HARNESS = os.environ.get("BROWSER_HARNESS", "browser-harness") 先读取 PowerShell 中的路径；run_harness(command) 用 subprocess.run([HARNESS], input=command, ...) 启动工具；command 是 collect_current_page.py 的文件内容；工具的 stdout 最后由 json.loads 转成 Python 字典。空白页入口则把 NAVIGATION_PREFIX 和缩进后的采集器拼成同一个 command，再调用同一个 run_harness 函数。
+
 ## 08：内层 DOM 采集器如何工作
 
 内层代码运行在网页上下文，所以可以使用 document.querySelectorAll、location.href 等浏览器 API。

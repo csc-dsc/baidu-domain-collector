@@ -523,30 +523,34 @@ location = response.headers.get(<span class="str">"Location"</span>, <span class
       </header>
       <div class="grid-2">
         <pre class="code"><span class="comment"># run_current_page.py</span>
+<span class="comment"># 1. 环境变量优先；未设置时从 PATH 查找 browser-harness</span>
+HARNESS = os.environ.get(<span class="str">"BROWSER_HARNESS"</span>, <span class="str">"browser-harness"</span>)
+
+<span class="kw">def</span> <span class="name">run_harness</span>(command):
+    process = subprocess.run(
+        [HARNESS],             <span class="comment"># 例如 D:\...\browser-harness.exe</span>
+        input=command,         <span class="comment"># 把 collect_current_page.py 传到 stdin</span>
+        text=<span class="kw">True</span>, encoding=<span class="str">"utf-8"</span>,
+        capture_output=<span class="kw">True</span>, timeout=60,
+    )
+    <span class="kw">if</span> process.returncode != 0:
+        <span class="kw">raise</span> RuntimeError(process.stderr + process.stdout)
+    <span class="kw">return</span> json.loads(process.stdout)
+
+<span class="comment"># 2. 当前结果页入口</span>
 command = (SCRIPT_DIR / <span class="str">"collect_current_page.py"</span>).read_text(
     encoding=<span class="str">"utf-8"</span>
 )
-
-process = subprocess.run(
-    [HARNESS],
-    input=command,
-    text=<span class="kw">True</span>,
-    encoding=<span class="str">"utf-8"</span>,
-    capture_output=<span class="kw">True</span>,
-    timeout=60,
-)
-
-<span class="kw">if</span> process.returncode != 0:
-    <span class="kw">raise</span> RuntimeError(process.stderr + process.stdout)
-
-result = json.loads(process.stdout)
+result = run_harness(command)
 json_path, text_path = write_results(result)</pre>
         <div class="panel">
-          <h3>为什么用标准输入？</h3>
+          <h3>HARNESS 从哪里来？</h3>
+          <p>PowerShell 的 BROWSER_HARNESS 环境变量会被 Python 的 os.environ 读取。没有设置时，代码尝试从 PATH 查找名为 browser-harness 的命令。</p>
+          <h3 style="margin-top:14px">为什么用标准输入？</h3>
           <p><code>browser-harness</code> 接受一段命令文本。外层脚本读取内层采集器源码后，以 stdin 传入，避免 PowerShell 复杂引号转义。</p>
-          <h3 style="margin-top:18px">为什么不使用 shell？</h3>
+          <h3 style="margin-top:14px">为什么不使用 shell？</h3>
           <p>传入参数列表 <code>[HARNESS]</code>，不使用 <code>shell=True</code>，避免命令字符串的二次解释。</p>
-          <h3 style="margin-top:18px">产物如何组织？</h3>
+          <h3 style="margin-top:14px">产物如何组织？</h3>
           <p>每次运行向 <code>output/</code> 新建时间戳 JSON 与 TXT；源码、旧证据和 Git 历史都不会被覆盖。</p>
         </div>
       </div>
@@ -683,10 +687,15 @@ var candidates = [[<span class="str">"href"</span>, anchor.href]];
 $env:BROWSER_HARNESS =
   <span class="str">'D:\MCP_Servers\browser-harness-conda\Scripts\browser-harness.exe'</span>
 
-<span class="comment"># 当前结果页模式</span>
-python scripts\browser_harness\run_current_page.py
+<span class="comment"># 当前结果页模式：直接把采集器文本交给工具</span>
+collector = (SCRIPT_DIR / <span class="str">"collect_current_page.py"</span>).read_text(encoding=<span class="str">"utf-8"</span>)
+result = run_harness(collector)
 
-<span class="comment"># 当前空白页模式</span>
+<span class="comment"># 当前空白页模式：前缀负责判断、导航和等待</span>
+command = NAVIGATION_PREFIX + textwrap.indent(collector, <span class="str">"    "</span>)
+result = run_harness(command)
+
+<span class="comment"># 命令行实际运行入口</span>
 python scripts\browser_harness\run_search_from_blank_tab.py</pre>
         <div class="panel gold">
           <h3>一个容易误解的点</h3>
